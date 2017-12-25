@@ -1,5 +1,5 @@
 let poles = [];
-let totalPoles = 10;
+let totalPoles = 13;
 
 let popSize = 500;
 let population = [];
@@ -10,7 +10,8 @@ let bestEver;
 let currentBest;
 
 let server;
-let minidx;
+let lsI;
+let msI;
 
 function setup() {
 	createCanvas(windowWidth, windowHeight);
@@ -24,7 +25,7 @@ function setup() {
 		order[i] = i;
 	}
 
-	minidx = findServer(poles);
+	lsI = findServer(poles);
 
 	for (let i = 0; i < popSize; i++) {
     population[i] = shuffle(order);
@@ -60,7 +61,14 @@ function draw() {
 	server.display();
 
 	//Node
+	let c = 0;
 	for (p of poles) {
+		c++;
+		if (c == lsI+1 || c == msI+1) {
+			p.server = true;
+		} else {
+			p.server = false;
+		}
 		p.display();
 		p.signalRange();
 	}
@@ -91,19 +99,35 @@ function findServer(a) {
 }
 
 function communicate() {
-	noFill();
-	stroke(255,100,0);
-	strokeWeight(3);
-	line(poles[minidx].pos.x, poles[minidx].pos.y, server.pos.x, server.pos.y);
+	let md = Infinity;
 	stroke(0,100,255);
 	strokeWeight(2);
 	for (let i=0; i<totalPoles; i++) {
 		let msd = dist(poles[i].pos.x, poles[i].pos.y, server.pos.x, server.pos.y);
-		let lsd = dist(poles[i].pos.x, poles[i].pos.y, poles[minidx].pos.x, poles[minidx].pos.y);
+		if (msd < md) {
+			md = msd;
+			msI = i;
+		}
+		let lsd = dist(poles[i].pos.x, poles[i].pos.y, poles[lsI].pos.x, poles[lsI].pos.y);
 		if (lsd < msd) {
-			line(poles[i].pos.x, poles[i].pos.y, poles[minidx].pos.x, poles[minidx].pos.y);
+			line(poles[i].pos.x, poles[i].pos.y, poles[lsI].pos.x, poles[lsI].pos.y);
 		} else {
 			line(poles[i].pos.x, poles[i].pos.y, server.pos.x, server.pos.y);
 		}
 	}
+	noFill();
+	stroke(255,100,0);
+	strokeWeight(3);
+	if (sdist(lsI) <= sdist(msI)) {
+		line(poles[lsI].pos.x, poles[lsI].pos.y, server.pos.x, server.pos.y);
+	} else {
+		poles[msI].server = true;
+		line(poles[lsI].pos.x, poles[lsI].pos.y, poles[msI].pos.x, poles[msI].pos.y);
+		line(poles[msI].pos.x, poles[msI].pos.y, server.pos.x, server.pos.y);
+	}
+	//console.log(msI, lsI);
+}
+
+function sdist(i) {
+	return dist(poles[i].pos.x, poles[i].pos.y, server.pos.x, server.pos.y);
 }
